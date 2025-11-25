@@ -1,18 +1,38 @@
 import React, { useState } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase/config';
 import logo from '/logo.png';
-import { BookOpen } from 'lucide-react';
-import { Container, Card, CardBody, Form, FormGroup, Label, Input, Button, Alert } from 'reactstrap';
+import { Container, Card, CardBody, Form, FormGroup, Input, Button, Alert } from 'reactstrap';
 
-const Login = ({ onLogin }) => {
+const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
     setError('');
-    const success = await onLogin(email, password);
-    if (!success) {
-      setError('Invalid credentials');
+    setLoading(true);
+    
+    console.log('🔐 Login: Attempting to sign in with email:', email);
+    
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      console.log('✅ Login: Sign in successful');
+      // Auth state change will be handled by App.jsx
+    } catch (error) {
+      console.error('❌ Login: Sign in error:', error);
+      console.error('❌ Login: Error code:', error.code);
+      console.error('❌ Login: Error message:', error.message);
+      
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        setError('Invalid email or password. Please check your credentials.');
+      } else {
+        setError('Login failed: ' + error.message);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -31,7 +51,7 @@ const Login = ({ onLogin }) => {
               <p className="mt-2 fw-medium" style={{ color: '#0F2E42' }}>Document Management System</p>
             </div>
             
-            <Form>
+            <Form onSubmit={handleSubmit}>
               <FormGroup>
                 <Input
                   type="email"
@@ -39,12 +59,13 @@ const Login = ({ onLogin }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
                   className="mb-3"
+                  required
+                  disabled={loading}
                   style={{ 
                     border: '2px solid #e5e7eb',
                     borderRadius: '8px',
                     padding: '12px 16px'
                   }}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
                 />
               </FormGroup>
               
@@ -55,12 +76,13 @@ const Login = ({ onLogin }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Password"
                   className="mb-3"
+                  required
+                  disabled={loading}
                   style={{ 
                     border: '2px solid #e5e7eb',
                     borderRadius: '8px',
                     padding: '12px 16px'
                   }}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
                 />
               </FormGroup>
               
@@ -71,17 +93,17 @@ const Login = ({ onLogin }) => {
               )}
               
               <Button
-                onClick={handleSubmit}
+                type="submit"
                 className="w-100 py-3 fw-semibold"
+                disabled={loading}
                 style={{ 
                   backgroundColor: '#FF6B6B',
                   border: 'none',
-                  borderRadius: '8px'
+                  borderRadius: '8px',
+                  opacity: loading ? 0.6 : 1
                 }}
-                onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                onMouseLeave={(e) => e.target.style.opacity = '1'}
               >
-                Sign In
+                {loading ? 'Signing In...' : 'Sign In'}
               </Button>
             </Form>
           </CardBody>
