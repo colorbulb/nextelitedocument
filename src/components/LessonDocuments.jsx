@@ -277,20 +277,13 @@ const LessonDocuments = ({ selectedClass, selectedLevel, selectedLesson, onBack,
         selectedLesson.id
       );
 
-      // Store both UID and email for flexibility in NextElite app
-      // NextElite can check either student.uid or student.email in unlockedFor array
-      const unlockedForData = selectedStudentIds.map(studentId => {
-        const student = students.find(s => (s.uid || s.id) === studentId);
-        return {
-          uid: student?.uid || studentId,
-          email: student?.email,
-          id: student?.id || studentId
-        };
-      });
-
+      // Store array of student UIDs/IDs for NextElite to check
+      // NextElite should filter documents where: unlockedFor.includes(student.uid) || unlockedFor.includes(student.id)
+      // If unlockedFor is empty array [], document is locked for all students
+      // If unlockedFor has student IDs, only those students can see it
       const updatedDocs = documents.map(doc => 
         doc.id === selectedDocForUnlock.id 
-          ? { ...doc, unlockedFor: selectedStudentIds } // Store UIDs/IDs for quick lookup
+          ? { ...doc, unlockedFor: selectedStudentIds } // Array of student UIDs/IDs
           : doc
       );
 
