@@ -19,78 +19,76 @@ function App() {
       
       if (user) {
         try {
-          console.log('🔍 App: Checking teacher collection for user:', user.email);
+          console.log('🔍 App: User authenticated, checking teacher collection for email:', user.email);
           
-          // Check users collection for teacher role
-          const usersRef = collection(db, 'users');
-          console.log('📋 App: Querying users collection...');
+          // Check teachers collection - match by email after authentication
+          const teachersRef = collection(db, 'teachers');
+          console.log('📋 App: Querying teachers collection...');
           
-          // Try to find user by email first
-          const emailQuery = query(usersRef, where('email', '==', user.email));
+          // Find teacher by email (must match authenticated user's email)
+          const emailQuery = query(teachersRef, where('email', '==', user.email));
           const emailSnapshot = await getDocs(emailQuery);
           
-          console.log('📋 App: Email query result - found:', emailSnapshot.docs.length, 'documents');
+          console.log('📋 App: Teacher query result - found:', emailSnapshot.docs.length, 'documents');
           
-          let userDoc = null;
-          let userData = null;
+          let teacherDoc = null;
+          let teacherData = null;
+          let matchType = null;
           
           if (!emailSnapshot.empty) {
-            userDoc = emailSnapshot.docs[0];
-            userData = userDoc.data();
-            console.log('✅ App: Found user by email:', {
-              docId: userDoc.id,
-              email: userData.email,
-              role: userData.role,
-              uid: userData.uid
+            // Teacher found by email
+            teacherDoc = emailSnapshot.docs[0];
+            teacherData = teacherDoc.data();
+            matchType = 'email';
+            console.log('✅ App: Teacher found by email:', {
+              docId: teacherDoc.id,
+              email: teacherData.email,
+              name: teacherData.name || teacherData.displayName,
+              uid: teacherData.uid
             });
           } else {
-            // Try to find by uid field
-            console.log('📋 App: Trying to find user by UID:', user.uid);
-            const uidQuery = query(usersRef, where('uid', '==', user.uid));
+            // Try to find by uid (like NextElite does)
+            console.log('📋 App: Teacher not found by email, trying UID:', user.uid);
+            const uidQuery = query(teachersRef, where('uid', '==', user.uid));
             const uidSnapshot = await getDocs(uidQuery);
             
             console.log('📋 App: UID query result - found:', uidSnapshot.docs.length, 'documents');
             
             if (!uidSnapshot.empty) {
-              userDoc = uidSnapshot.docs[0];
-              userData = uidSnapshot.docs[0].data();
-              console.log('✅ App: Found user by UID:', {
-                docId: userDoc.id,
-                email: userData.email,
-                role: userData.role,
-                uid: userData.uid
+              teacherDoc = uidSnapshot.docs[0];
+              teacherData = teacherDoc.data();
+              matchType = 'uid';
+              console.log('✅ App: Teacher found by UID:', {
+                docId: teacherDoc.id,
+                email: teacherData.email,
+                name: teacherData.name || teacherData.displayName,
+                uid: teacherData.uid
               });
             }
           }
           
-          if (userData) {
-            // Check for role field
-            const role = (userData.role || userData.userRole || userData.user_type || 'student').toLowerCase();
-            console.log('👤 App: User role detected:', role);
-            console.log('👤 App: Full user data:', userData);
-            
-            setUserRole(role);
-            
-            // Only allow teachers to access
-            if (role === 'teacher' || role === 'admin') {
-              console.log('✅ App: User is teacher/admin, granting access');
-              setCurrentUser({
-                uid: user.uid,
-                email: user.email,
-                displayName: userData.displayName || userData.name || userData.username || user.email?.split('@')[0] || 'Admin',
-                role: role
-              });
-            } else {
-              console.log('❌ App: User is not a teacher/admin, denying access. Role:', role);
-              setCurrentUser(null);
-              alert('Access denied. Only teachers can access this portal.');
-              await signOut(auth);
-            }
+          if (teacherData) {
+            // Teacher found - grant access
+            console.log('✅ App: Full teacher data:', teacherData);
+            console.log('✅ App: Teacher found (matched by ' + matchType + '), granting access and permissions');
+            setUserRole('teacher');
+            setCurrentUser({
+              uid: user.uid,
+              email: user.email,
+              displayName: teacherData.name || teacherData.displayName || teacherData.username || user.email?.split('@')[0] || 'Teacher',
+              role: 'teacher'
+            });
           } else {
-            console.log('❌ App: User document not found in users collection');
+            // Teacher not found in teachers collection - not authorized
+            console.log('❌ App: Teacher not found in teachers collection');
+            console.log('❌ App: Email searched:', user.email);
+            console.log('❌ App: UID searched:', user.uid);
+            console.log('❌ App: User is not authorized - not a teacher');
             setCurrentUser(null);
-            alert('User not found in system. Please contact administrator to set up your account.');
+            // Sign out and show error (error will be handled by Login component)
             await signOut(auth);
+            // Set error state that Login component can read
+            sessionStorage.setItem('loginError', 'Not authorized. Only teachers can access this portal.');
           }
         } catch (error) {
           console.error('❌ App: Error checking user role:', error);

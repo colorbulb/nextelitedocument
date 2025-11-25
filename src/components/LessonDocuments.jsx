@@ -21,12 +21,29 @@ const LessonDocuments = ({ selectedClass, selectedLevel, selectedLesson, onBack,
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClassFilter, setSelectedClassFilter] = useState('');
   const [courses, setCourses] = useState([]);
+  const [classes, setClasses] = useState([]); // NextElite classes for filtering
 
   useEffect(() => {
     loadDocuments();
     loadStudents();
     loadCourses();
+    loadClasses();
   }, [selectedLesson]);
+
+  const loadClasses = async () => {
+    try {
+      const classesSnapshot = await getDocs(collection(db, 'classes'));
+      const classesList = classesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      console.log('Loaded classes for filtering:', classesList.length, classesList);
+      setClasses(classesList);
+    } catch (error) {
+      console.error('Error loading classes:', error);
+      setClasses([]);
+    }
+  };
 
   useEffect(() => {
     // Filter students based on search term and class filter
@@ -70,25 +87,37 @@ const LessonDocuments = ({ selectedClass, selectedLevel, selectedLesson, onBack,
       );
     }
 
-    // Filter by enrolled class
+    // Filter by enrolled class (using NextElite classes, not courses)
     if (selectedClassFilter) {
       filtered = filtered.filter(student => {
         // Check various possible enrollment fields that NextElite might use
         const enrolledClasses = student.enrolledClasses || student.classes || student.classIds || student.enrolledClassIds || [];
         const classId = student.classId || student.class || student.currentClassId;
         
+        console.log('Filtering student:', student.name, {
+          enrolledClasses,
+          classId,
+          selectedClassFilter,
+          hasEnrolledClasses: Array.isArray(enrolledClasses) && enrolledClasses.length > 0
+        });
+        
         // Check if student is enrolled in the selected class
         if (Array.isArray(enrolledClasses) && enrolledClasses.length > 0) {
           // Handle array of class IDs (strings)
           if (enrolledClasses.includes(selectedClassFilter)) {
+            console.log('Student matches by array includes:', student.name);
             return true;
           }
           // Handle array of class objects with id property
           if (enrolledClasses.some(c => {
             if (typeof c === 'object' && c !== null) {
-              return c.id === selectedClassFilter || c.classId === selectedClassFilter;
+              const matches = c.id === selectedClassFilter || c.classId === selectedClassFilter;
+              if (matches) console.log('Student matches by object id:', student.name, c);
+              return matches;
             }
-            return c === selectedClassFilter;
+            const matches = c === selectedClassFilter;
+            if (matches) console.log('Student matches by direct value:', student.name, c);
+            return matches;
           })) {
             return true;
           }
@@ -96,11 +125,15 @@ const LessonDocuments = ({ selectedClass, selectedLevel, selectedLesson, onBack,
         
         // Check single classId field
         if (classId === selectedClassFilter) {
+          console.log('Student matches by classId field:', student.name);
           return true;
         }
         
+        console.log('Student does not match filter:', student.name);
         return false;
       });
+      
+      console.log('After class filter, students remaining:', filtered.length);
     }
 
     setStudents(filtered);
@@ -244,8 +277,8 @@ const LessonDocuments = ({ selectedClass, selectedLevel, selectedLesson, onBack,
     setSearchTerm('');
     setSelectedClassFilter('');
     
-    // Reload students and courses to ensure fresh data
-    await Promise.all([loadStudents(), loadCourses()]);
+    // Reload students, courses, and classes to ensure fresh data
+    await Promise.all([loadStudents(), loadCourses(), loadClasses()]);
     
     // Pre-select students who already have access (after loading students)
     // unlockedFor can contain UIDs or email-based IDs, so we need to match both
@@ -255,12 +288,26 @@ const LessonDocuments = ({ selectedClass, selectedLevel, selectedLesson, onBack,
     setShowUnlockModal(true);
   };
 
-  const toggleStudentSelection = (studentId) => {
-    setSelectedStudentIds(prev => 
-      prev.includes(studentId)
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    );
+  const toggleStudentSelection = (studentId, event) => {
+    // Prevent event propagation if called from checkbox directly
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    setSelectedStudentIds(prev => {
+      const isCurrentlySelected = prev.includes(studentId);
+      console.log('Toggling student:', studentId, 'currently selected:', isCurrentlySelected);
+      
+      if (isCurrentlySelected) {
+        const newSelection = prev.filter(id => id !== studentId);
+        console.log('Deselecting student, new selection:', newSelection);
+        return newSelection;
+      } else {
+        const newSelection = [...prev, studentId];
+        console.log('Selecting student, new selection:', newSelection);
+        return newSelection;
+      }
+    });
   };
 
   const handleSaveUnlock = async () => {
@@ -739,9 +786,9 @@ const LessonDocuments = ({ selectedClass, selectedLevel, selectedLesson, onBack,
                   }}
                 >
                   <option value="">All Classes</option>
-                  {courses.map(course => (
-                    <option key={course.id} value={course.id}>
-                      {course.name}
+                  {classes.map(cls => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name || cls.className || `Class ${cls.id}`}
                     </option>
                   ))}
                 </Input>
@@ -815,12 +862,18 @@ const LessonDocuments = ({ selectedClass, selectedLevel, selectedLesson, onBack,
                         borderColor: isSelected ? '#1a4f62' : '#e5e7eb',
                         cursor: 'pointer'
                       }}
-                      onClick={() => toggleStudentSelection(student.uid || student.id)}
+                      onClick={(e) => {
+                        // Only toggle if clicking on the div, not the checkbox
+                        if (e.target.type !== 'checkbox') {
+                          toggleStudentSelection(student.uid || student.id, e);
+                        }
+                      }}
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => toggleStudentSelection(student.uid || student.id)}
+                        onChange={(e) => toggleStudentSelection(student.uid || student.id, e)}
+                        onClick={(e) => e.stopPropagation()}
                         className="me-3"
                         style={{ cursor: 'pointer' }}
                       />

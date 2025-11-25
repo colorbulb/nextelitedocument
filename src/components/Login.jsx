@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import logo from '/logo.png';
@@ -9,6 +9,15 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Check for error from App.jsx (when user is not a teacher)
+  useEffect(() => {
+    const loginError = sessionStorage.getItem('loginError');
+    if (loginError) {
+      setError(loginError);
+      sessionStorage.removeItem('loginError');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -21,6 +30,7 @@ const Login = () => {
       await signInWithEmailAndPassword(auth, email, password);
       console.log('✅ Login: Sign in successful');
       // Auth state change will be handled by App.jsx
+      // If user is not a teacher, App.jsx will sign them out and set error in sessionStorage
     } catch (error) {
       console.error('❌ Login: Sign in error:', error);
       console.error('❌ Login: Error code:', error.code);

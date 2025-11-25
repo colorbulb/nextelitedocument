@@ -392,34 +392,41 @@ const AdminDashboard = ({ currentUser, onLogout }) => {
     <div className="min-h-screen bg-brand-neutral">
       {/* Header */}
       <Navbar expand="md" style={{ backgroundColor: '#1a4f62' }} className="shadow-lg">
-        <Container fluid className="d-flex align-items-center">
-          <NavbarBrand className="text-white d-flex align-items-center gap-3 flex-grow-0">
-            <img src={logo} width="100px" alt="Logo" />
-            <div>
-              <h1 className="h4 mb-0 fw-bold">NextDoc - Document Management</h1>
-              <p className="small mb-0 opacity-90">Course Curriculum Platform</p>
+        <Container fluid>
+          <div className="d-flex align-items-center justify-content-between w-100 flex-wrap">
+            <NavbarBrand className="text-white d-flex align-items-center gap-2 gap-md-3 flex-grow-0 flex-shrink-0">
+              <img src={logo} width="80px" alt="Logo" className="d-none d-sm-inline" style={{ maxWidth: '100px' }} />
+              <div className="flex-grow-0 flex-shrink-1" style={{ minWidth: 0 }}>
+                <h1 className="h5 h-md-4 mb-0 fw-bold text-truncate">NextDoc</h1>
+                <p className="small mb-0 opacity-90 d-none d-md-block">Course Curriculum Platform</p>
+              </div>
+            </NavbarBrand>
+            <div className="d-flex align-items-center gap-2 gap-md-3 flex-shrink-0 ms-auto">
+              <div className="d-none d-sm-flex align-items-center" style={{ backgroundColor: '#1a4f62', borderRadius: '8px', padding: '8px 12px' }}>
+                <span className="text-white fw-medium text-nowrap">{currentUser.displayName}</span>
+                <span className="text-white small ms-2 d-none d-md-inline" style={{ backgroundColor: '#1a4f62', padding: '4px 8px', borderRadius: '4px' }}>
+                  Admin
+                </span>
+              </div>
+              <div className="d-sm-none text-white fw-medium text-truncate" style={{ maxWidth: '120px' }}>
+                {currentUser.displayName}
+              </div>
+              <Button
+                onClick={onLogout}
+                style={{ 
+                  backgroundColor: '#1a4f62',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  flexShrink: 0
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5f72'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#1a4f62'}
+              >
+                <LogOut size={20} className="text-white d-sm-none" />
+                <LogOut size={24} className="text-white d-none d-sm-inline" />
+              </Button>
             </div>
-          </NavbarBrand>
-          <div className="ms-auto d-flex align-items-center gap-3">
-            <div style={{ backgroundColor: '#1a4f62', borderRadius: '8px', padding: '8px 16px' }}>
-              <span className="text-white fw-medium">{currentUser.displayName}</span>
-              <span className="text-white small ms-2" style={{ backgroundColor: '#1a4f62', padding: '4px 8px', borderRadius: '4px' }}>
-                Admin
-              </span>
-            </div>
-            <Button
-              onClick={onLogout}
-              style={{ 
-                backgroundColor: '#1a4f62',
-                border: 'none',
-                padding: '8px 12px',
-                borderRadius: '8px'
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5f72'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#1a4f62'}
-            >
-              <LogOut size={24} className="text-white" />
-            </Button>
           </div>
         </Container>
       </Navbar>
@@ -428,9 +435,9 @@ const AdminDashboard = ({ currentUser, onLogout }) => {
         {!selectedClass ? (
           // Class Selection View
           <div>
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <h2 className="h2 fw-bold" style={{ color: '#7D633C' }}>Courses</h2>
-              <div className="d-flex gap-3">
+            <div className="mb-4">
+              <h2 className="h2 fw-bold mb-3 mb-md-0" style={{ color: '#7D633C' }}>Courses</h2>
+              <div className="d-flex flex-column flex-md-row gap-2 gap-md-3">
                 <Button
                   onClick={handleImportFromNextElite}
                   disabled={loading}
@@ -441,8 +448,9 @@ const AdminDashboard = ({ currentUser, onLogout }) => {
                   }}
                   onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                   onMouseLeave={(e) => e.target.style.opacity = '1'}
+                  className="w-100 w-md-auto"
                 >
-                  <Download size={24} className="me-2" />
+                  <Download size={20} className="me-2" />
                   Import from NextElite
                 </Button>
                 <Button
@@ -457,8 +465,9 @@ const AdminDashboard = ({ currentUser, onLogout }) => {
                   }}
                   onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                   onMouseLeave={(e) => e.target.style.opacity = '1'}
+                  className="w-100 w-md-auto"
                 >
-                  <Plus size={24} className="me-2" />
+                  <Plus size={20} className="me-2" />
                   Create Course
                 </Button>
               </div>
