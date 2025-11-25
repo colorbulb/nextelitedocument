@@ -394,10 +394,10 @@ const AdminDashboard = ({ currentUser, onLogout }) => {
       <Navbar expand="md" style={{ backgroundColor: '#1a4f62' }} className="shadow-lg">
         <Container fluid>
           <div className="d-flex align-items-center justify-content-between w-100 flex-wrap">
-            <NavbarBrand className="text-white d-flex align-items-center gap-2 gap-md-3 flex-grow-0 flex-shrink-0">
-              <img src={logo} width="80px" alt="Logo" className="d-none d-sm-inline" style={{ maxWidth: '100px' }} />
-              <div className="flex-grow-0 flex-shrink-1" style={{ minWidth: 0 }}>
-                <h1 className="h5 h-md-4 mb-0 fw-bold text-truncate">NextDoc</h1>
+            <NavbarBrand className="text-white d-flex flex-column flex-md-row align-items-center gap-1 gap-md-3 flex-grow-0 flex-shrink-0">
+              <img src={logo} width="80px" alt="Logo" style={{ maxWidth: '100px' }} />
+              <div className="text-center text-md-start">
+                <h1 className="h5 h-md-4 mb-0 fw-bold">NextDoc</h1>
                 <p className="small mb-0 opacity-90 d-none d-md-block">Course Curriculum Platform</p>
               </div>
             </NavbarBrand>
